@@ -22,12 +22,20 @@ src/
 - **Vector Storage**: Local ChromaDB persistence for embeddings (no external services required)
 - **Semantic Search**: Embedding-based similarity search for relevant document chunks
 - **Result Reranking**: Cross-encoder models for improved search relevance
-- **RAG Pipeline**: Complete pipeline ready for LLM integration
+- **LLM Generation**: OpenRouter integration for generating answers from retrieved context
 
 ## Quick Start
 
 ```bash
 pip install -r requirements.txt
+```
+
+### Environment Setup
+
+Create a `.env` file:
+```env
+OPENROUTER_API_KEY=your-api-key-here
+OPENROUTER_URL=https://openrouter.ai/api/v1
 ```
 
 ### Ingest Documents
@@ -39,15 +47,24 @@ from pathlib import Path
 stats = ingest_knowledge_base(vector_store_path=Path("data/chroma_db"))
 ```
 
-### Search and Rerank
+### Complete RAG Pipeline
 
 ```python
 from src.retrieval.search import SearchEngine
 from src.retrieval.reranker import Reranker
+from src.generation.prompt import PromptBuilder
+from src.generation.llm_client import LLMClient
 
+# Search and rerank
 engine = SearchEngine()
 results = engine.search("What is the company policy?", n_results=10)
 reranked = Reranker().rerank("What is the company policy?", results, top_k=5)
+
+# Generate answer
+builder = PromptBuilder()
+prompt = builder.build_prompt("What is the company policy?", reranked)
+client = LLMClient()
+answer = client.generate(prompt['system'], prompt['user'])
 ```
 
 ## Knowledge Base Structure
