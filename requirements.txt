@@ -5,3 +5,7 @@ tqdm>=4.65.0
 numpy>=1.24.0
 python-dotenv>=1.0.0
 openai>=1.0.0
+gradio>=4.0.0
+# Note: sentence-transformers will install PyTorch automatically
+# For CPU-only (faster install), use: uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Then: uv pip install -r requirements.txt

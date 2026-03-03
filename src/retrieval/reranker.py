@@ -4,7 +4,15 @@ Reranking search results for improved relevance.
 This module reranks initial search results using cross-encoder models.
 """
 
+import os
+import warnings
 from typing import List, Dict, Any, Optional
+
+# Suppress HuggingFace warnings globally
+os.environ.setdefault("HF_HUB_DISABLE_EXPERIMENTAL_WARNING", "1")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", message=".*HF Hub.*")
 
 
 class Reranker:
@@ -28,7 +36,7 @@ class Reranker:
                 self._model = CrossEncoder(self.model_name)
             except ImportError:
                 raise ImportError(
-                    "sentence-transformers is required. Install with: pip install sentence-transformers"
+                    "sentence-transformers is required. Install with: uv pip install sentence-transformers"
                 )
     
     def rerank(

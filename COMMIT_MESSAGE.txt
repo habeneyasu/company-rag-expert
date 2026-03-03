@@ -1,0 +1,20 @@
+docs: Add comprehensive documentation and project assets
+
+Add user-focused documentation and visual assets to improve project
+accessibility and onboarding experience.
+
+Documentation:
+- Rewrite README with user-friendly narrative flow (problem-solution approach)
+- Add FEATURES.md with technical feature specifications
+- Simplify knowledge-base README for clarity
+- Add FAQ section addressing common user questions
+- Remove technical jargon in favor of accessible language
+
+Assets:
+- Add assets directory with interface screenshots
+- Include Company Policy and Core Values query examples
+- Add descriptive captions for visual demonstrations
+
+Project structure:
+- Organize documentation files for better discoverability
+- Improve documentation coherence and flow throughout
