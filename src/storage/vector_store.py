@@ -5,6 +5,7 @@ This module handles persistence and retrieval of embedded document chunks using 
 Defaults to local persistent storage for testing and demo purposes.
 """
 
+from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 
@@ -57,17 +58,29 @@ class VectorStore:
                 )
             except ImportError:
                 raise ImportError(
-                    "chromadb is required. Install with: pip install chromadb"
+                    "chromadb is required. Install with: uv pip install chromadb"
                 )
     
     @staticmethod
     def _convert_metadata(chunk_meta: ChunkMetadata) -> Dict[str, Any]:
-        """Convert ChunkMetadata to dict, handling datetime serialization."""
+        """Convert ChunkMetadata to dict compatible with ChromaDB."""
         metadata_dict = chunk_meta.model_dump()
+        
+        # Convert to ChromaDB-compatible types
+        result = {}
         for key, value in metadata_dict.items():
-            if hasattr(value, 'isoformat'):
-                metadata_dict[key] = value.isoformat()
-        return metadata_dict
+            if value is None:
+                continue  # Skip None values
+            elif isinstance(value, datetime):
+                result[key] = value.isoformat()
+            elif hasattr(value, 'value'):  # Enum
+                result[key] = str(value.value)
+            elif isinstance(value, (str, int, float, bool)):
+                result[key] = value
+            else:
+                result[key] = str(value)
+        
+        return result
     
     def add_chunks(
         self,

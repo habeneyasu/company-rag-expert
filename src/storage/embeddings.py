@@ -4,7 +4,15 @@ Embedding generation for document chunks.
 This module handles generating vector embeddings for text chunks.
 """
 
+import os
+import warnings
 from typing import List
+
+# Suppress HuggingFace warnings globally
+os.environ.setdefault("HF_HUB_DISABLE_EXPERIMENTAL_WARNING", "1")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", message=".*HF Hub.*")
 
 
 class EmbeddingModel:
@@ -28,7 +36,7 @@ class EmbeddingModel:
                 self._model = SentenceTransformer(self.model_name)
             except ImportError:
                 raise ImportError(
-                    "sentence-transformers is required. Install with: pip install sentence-transformers"
+                    "sentence-transformers is required. Install with: uv pip install sentence-transformers"
                 )
     
     def embed_text(self, text: str) -> List[float]:

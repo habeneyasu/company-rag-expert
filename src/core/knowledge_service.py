@@ -1,12 +1,4 @@
-"""
-Knowledge service orchestrator.
-
-This module orchestrates the complete RAG pipeline:
-1. Load documents (loader → metadata)
-2. Chunk documents (chunker)
-3. Generate embeddings (embeddings)
-4. Store in vector database (vector_store)
-"""
+"""Knowledge service orchestrator for RAG pipeline."""
 
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -16,43 +8,42 @@ from ..ingestion.loader import get_knowledge_base_path, load_documents
 from ..ingestion.chunker import chunk_document
 from ..storage.embeddings import EmbeddingModel
 from ..storage.vector_store import VectorStore
+from ..retrieval.search import SearchEngine
+from ..retrieval.reranker import Reranker
+from ..generation.prompt import PromptBuilder
+from ..generation.llm_client import LLMClient
 
 
 class KnowledgeService:
-    """Orchestrates document ingestion: loading, chunking, embedding, and storage."""
+    """Orchestrates complete RAG pipeline: ingestion and querying."""
     
     def __init__(
         self,
         vector_store: Optional[VectorStore] = None,
         embedding_model: Optional[EmbeddingModel] = None,
         chunk_size: int = 1000,
-        chunk_overlap: int = 200
+        chunk_overlap: int = 200,
+        use_reranker: bool = True,
+        max_context_chunks: Optional[int] = None
     ):
-        """
-        Initialize knowledge service.
-        
-        Args:
-            vector_store: Vector store instance (creates default if None)
-            embedding_model: Embedding model instance (creates default if None)
-            chunk_size: Size of chunks in characters
-            chunk_overlap: Overlap between chunks in characters
-        """
         self.vector_store = vector_store or VectorStore()
         self.embedding_model = embedding_model or EmbeddingModel()
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        self.use_reranker = use_reranker
+        self.max_context_chunks = max_context_chunks
+        
+        # Initialize retrieval and generation components
+        self.search_engine = SearchEngine(
+            vector_store=self.vector_store,
+            embedding_model=self.embedding_model
+        )
+        self.reranker = Reranker() if use_reranker else None
+        self.prompt_builder = PromptBuilder()
+        self.llm_client = LLMClient()
     
     def _process_document(self, content: str, metadata) -> int:
-        """
-        Process a document: chunk, embed, and store.
-        
-        Args:
-            content: Document content
-            metadata: Document metadata
-        
-        Returns:
-            Number of chunks processed
-        """
+        """Process a document: chunk, embed, and store."""
         # Chunk document
         chunks = chunk_document(content, metadata, self.chunk_size, self.chunk_overlap)
         if not chunks:
@@ -67,16 +58,7 @@ class KnowledgeService:
         return len(chunks)
     
     def ingest(self, path: Optional[Path] = None, show_progress: bool = True) -> Dict[str, Any]:
-        """
-        Ingest documents from a file or directory.
-        
-        Args:
-            path: File or directory path (defaults to knowledge-base if None)
-            show_progress: Show progress bar
-        
-        Returns:
-            Dictionary with ingestion statistics
-        """
+        """Ingest documents from a file or directory."""
         if path is None:
             path = get_knowledge_base_path()
         
@@ -103,6 +85,42 @@ class KnowledgeService:
             'total_chunks': total_chunks,
             'errors': errors
         }
+    
+    def query(
+        self,
+        query: str,
+        n_results: int = 10,
+        top_k: int = 5,
+        filter_dict: Optional[Dict[str, Any]] = None,
+        generate_answer: bool = True
+    ) -> Dict[str, Any]:
+        """Query the knowledge base and generate answer."""
+        # Search
+        results = self.search_engine.search(query, n_results=n_results, filter_dict=filter_dict)
+        
+        # Rerank if enabled
+        reranked = self.reranker.rerank(query, results, top_k=top_k) if self.reranker else results[:top_k]
+        
+        response = {
+            'query': query,
+            'search_results': results,
+            'reranked_results': reranked
+        }
+        
+        # Generate answer if requested
+        if generate_answer:
+            prompt = self.prompt_builder.build_prompt(
+                query=query,
+                results=reranked,
+                max_context_chunks=self.max_context_chunks
+            )
+            answer = self.llm_client.generate(
+                system_prompt=prompt['system'],
+                user_prompt=prompt['user']
+            )
+            response['answer'] = answer
+        
+        return response
 
 
 def ingest_knowledge_base(
@@ -112,23 +130,7 @@ def ingest_knowledge_base(
     chunk_overlap: int = 200,
     show_progress: bool = True
 ) -> Dict[str, Any]:
-    """
-    Convenience function to ingest the knowledge base.
-    
-    Uses local ChromaDB storage for testing and demo purposes.
-    Data is persisted to the specified directory (or in-memory if not specified).
-    
-    Args:
-        knowledge_base_path: Path to knowledge base directory (defaults to knowledge-base if None)
-        vector_store_path: Optional directory for ChromaDB persistence (defaults to in-memory if None)
-                          For testing/demo, use: Path("data/chroma_db")
-        chunk_size: Size of chunks in characters
-        chunk_overlap: Overlap between chunks in characters
-        show_progress: Whether to show progress bar
-    
-    Returns:
-        Dictionary with ingestion statistics
-    """
+    """Convenience function to ingest the knowledge base."""
     service = KnowledgeService(
         vector_store=VectorStore(persist_directory=vector_store_path),
         chunk_size=chunk_size,
