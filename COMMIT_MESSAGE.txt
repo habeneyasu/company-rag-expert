@@ -5,10 +5,8 @@ accessibility and onboarding experience.
 
 Documentation:
 - Rewrite README with user-friendly narrative flow (problem-solution approach)
-- Add FEATURES.md with technical feature specifications
 - Simplify knowledge-base README for clarity
 - Add FAQ section addressing common user questions
-- Remove technical jargon in favor of accessible language
 
 Assets:
 - Add assets directory with interface screenshots

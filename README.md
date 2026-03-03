@@ -58,11 +58,13 @@ That's it. No complex setup. No technical configuration. Just add documents and 
 **1. Get the code**
 
 ```bash
-git clone https://github.com/yourusername/company-rag-expert.git
+git clone https://github.com/habeneyasu/company-rag-expert.git
 cd company-rag-expert
 ```
 
 **2. Install the software**
+
+**Option A: Using uv (recommended for faster installation)**
 
 ```bash
 # Install uv package manager (if needed)
@@ -70,6 +72,20 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Create virtual environment and install dependencies
 uv venv && source .venv/bin/activate && uv pip install torch --index-url https://download.pytorch.org/whl/cpu && uv pip install -r requirements.txt
+```
+
+**Option B: Using standard pip**
+
+```bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install PyTorch (CPU version)
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install other dependencies
+pip install -r requirements.txt
 ```
 
 **3. Set up your API key**
@@ -122,7 +138,7 @@ A: Yes. Your documents are stored locally on your machine. Only when generating 
 A: Absolutely! Just add new markdown files to your knowledge base folder and restart the application. The system will automatically process the new documents.
 
 **Q: What if I want to customize how it works?**  
-A: The system works great out of the box, but if you need to customize chunk sizes, search parameters, or other settings, you can modify the code. See the project documentation for advanced configuration options.
+A: The system works great out of the box with sensible defaults. For advanced customization of chunk sizes, search parameters, or model selection, you can modify the `KnowledgeService` initialization in your code. Check the source code in `src/core/knowledge_service.py` for available options.
 
 ## Contributing
 
